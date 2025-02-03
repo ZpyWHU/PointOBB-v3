@@ -5,7 +5,7 @@ import mmcv
 import numpy as np
 from mmcv import Config, DictAction
 
-from mmdet.core.evaluation import eval_map
+from mmdet.core.evaluation.mean_ap import eval_map
 from mmdet.core.visualization import imshow_gt_det_bboxes
 from mmdet.datasets import build_dataset, get_loading_pipeline
 

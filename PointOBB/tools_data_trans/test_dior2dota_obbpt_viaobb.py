@@ -6,10 +6,10 @@ from PIL import Image
 import math
 import xml.etree.ElementTree as ET
 
-obb_anno_root = '/datasets/DIOR/Annotations/Oriented Bounding Boxes/'
-image_root = '/datasets/DIOR/JPEGImages-test/'
+obb_anno_root = 'DIOR/Annotations/Oriented Bounding Boxes/'
+image_root = 'DIOR/JPEGImages-trainval/'
 
-labelTxt_out_path = '/datasets/DIOR/labelTxt_obb_test'
+labelTxt_out_path = 'DIOR/labelTxt_obb_pt_trainval'
 # labelTxt_out_path = 'DIOR/labelTxt_obb_pt_trainval-noise20'
 # labelTxt_out_path = 'DIOR/labelTxt_obb_pt_trainval-noise0'
 label_name_list = os.listdir(obb_anno_root)
@@ -95,9 +95,9 @@ for label_name in label_name_list:
                 # HBB + pt label
                 # txt_file.write(f"{x_min} {y_min} {x_max} {y_min} {x_max} {y_max} {x_min} {y_max} {pt_x} {pt_y} {class_name} {difficult}\n")
                 # OBB + pt label
-                # txt_file.write(f"{x1} {y1} {x2} {y2} {x3} {y3} {x4} {y4} {pt_x} {pt_y} {class_name} {difficult}\n")
+                txt_file.write(f"{x1} {y1} {x2} {y2} {x3} {y3} {x4} {y4} {pt_x} {pt_y} {class_name} {difficult}\n")
                 # OBB label
-                txt_file.write(f"{x1} {y1} {x2} {y2} {x3} {y3} {x4} {y4} {class_name} {difficult}\n")
+                # txt_file.write(f"{x1} {y1} {x2} {y2} {x3} {y3} {x4} {y4} {class_name} {difficult}\n")
 
     txt_file.close()
     print(f'finish{label_name}')

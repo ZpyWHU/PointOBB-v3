@@ -22,9 +22,9 @@ from torch import Tensor
 from mmdet.models.utils.base_bbox_coder import BaseBBoxCoder
 from ..detectors.utils import obb2xyxy, regularize_boxes, reduce_mean, obb2poly_np
 
+
 RangeType = Sequence[Tuple[int, int]]
 INF = 1e8
-
 
 def meshgrid(x: Tensor,
              y: Tensor,
@@ -207,7 +207,7 @@ class PointOBBHead(StandardRoIHead):
                  agnostic_resize_classes2 = None,
                  cls_scores_weight = 1.0,
                  ins_scores_weight = 1.0,
-                 use_ssff = True,
+                 use_ssff = False,
                  **kwargs):
         super(PointOBBHead, self).__init__(bbox_roi_extractor=bbox_roi_extractor, bbox_head=bbox_head, **kwargs)
         self.threshold = 0.3
@@ -245,7 +245,8 @@ class PointOBBHead(StandardRoIHead):
         self.ins_scores_weight = ins_scores_weight
         self.num_classes = self.bbox_head.num_classes
         self.use_ssff = use_ssff
-        self._init_layers()     
+        self._init_layers()
+        
 
     def _init_layers(self):
         """Initialize layers of the head."""
@@ -272,6 +273,7 @@ class PointOBBHead(StandardRoIHead):
         if self.use_ssff:
             self.conv_gate = nn.Conv2d(
                 self.feat_channels, 1, 3, padding=1)
+    
 
     def angle_forward(self, feats: Tuple[Tensor]) -> Tuple[List[Tensor], List[Tensor]]:
         angle_results = []
@@ -547,7 +549,7 @@ class PointOBBHead(StandardRoIHead):
         # bbox head forward and loss
         if self.with_bbox:
             if not use_dview:
-                if self.use_angle_loss and stage==0: 
+                if self.use_angle_loss and stage == 0: 
                     self.use_snap_loss = True
                     angle_preds = self.angle_forward(x)
                     featmap_sizes = [featmap.size()[-2:] for featmap in angle_preds]
@@ -814,6 +816,7 @@ class PointOBBHead(StandardRoIHead):
             k1 = self.conv_gate(x1)
             k2 = self.conv_gate(x2)
             k3 = self.conv_gate(x3)
+
             K = (torch.stack((k0, k1, k2, k3), -1) / 8).softmax(-1)
             KV = torch.sum(V * K, -1)
             single_layer_feature = (KV,)
@@ -850,7 +853,6 @@ class PointOBBHead(StandardRoIHead):
         """Box head forward function used in both training and testing."""
         # TODO: a more flexible way to decide which feature maps to use
         # print(f'roi num:{len(rois)}')
-        
         max_roi_num = 10000
         if len(rois) > max_roi_num: # too many rois-OOM
             cls_score_list = []
@@ -868,6 +870,7 @@ class PointOBBHead(StandardRoIHead):
                 cls_score_list.append(cls_score_tmp)
                 ins_score_list.append(ins_score_tmp)
                 reg_box_list.append(reg_box_tmp)
+                
                 del rois_tmp
                 del bbox_feats
                 del cls_score_tmp
@@ -918,7 +921,7 @@ class PointOBBHead(StandardRoIHead):
             bbox_feats = None
 
         else:
-            # try1: single layer feature map
+        #  single layer feature map
             if self.use_ssff:
                 x0 = x[0]
                 x1 = nn.functional.interpolate(x[1], x0.shape[-2:], mode='nearest')
@@ -984,8 +987,8 @@ class PointOBBHead(StandardRoIHead):
             if stage == 0:
                 k = self.topk1
             else:
-                k = self.topk2     
-            dynamic_weight_, idx = dynamic_weight.topk(k=k, dim=1)
+                k = self.topk2
+            dynamic_weight_, idx = dynamic_weight.topk(k=k, dim=1) 
             weight = dynamic_weight_.unsqueeze(2).repeat([1, 1, 5]) 
             weight = weight / (weight.sum(dim=1, keepdim=True) + 1e-8)  
             filtered_boxes = proposals[torch.arange(proposals.shape[0]).unsqueeze(1), idx]
@@ -996,7 +999,7 @@ class PointOBBHead(StandardRoIHead):
             filtered_scores = dict(cls_score=cls_score[torch.arange(proposals.shape[0]).unsqueeze(1), idx],
                                    ins_score=ins_score[torch.arange(proposals.shape[0]).unsqueeze(1), idx],
                                    dynamic_weight=dynamic_weight_)
-
+   
             return boxes, filtered_boxes, filtered_scores
 
     def merge_rbox(self, bbox_results, proposals_list, proposals_valid_list, gt_labels, gt_bboxes, img_metas, stage):
@@ -1031,12 +1034,20 @@ class PointOBBHead(StandardRoIHead):
                                                              dynamic_weight_list,
                                                              gt_labels,
                                                              proposals_list,
-                                                             img_metas, stage_)
+                                                             img_metas, stage_)   
         pseudo_boxes = torch.cat(boxes).detach()
         half_num = pseudo_boxes.size(0)//2
         half_num_gt = len(gt_bboxes)//2
-        if cls_scores[0].requires_grad:  # training
+        if cls_scores[0].requires_grad:  # training              
             if self.use_angle_loss and self.add_angle_pred_begin:
+                if self.agnostic_resize_classes and stage>0:
+                    labels_ = torch.cat(gt_labels)
+                    for id in self.agnostic_resize_classes:
+                        pseudo_boxes[labels_ == id, 2:4] *= 0.65
+                if self.agnostic_resize_classes2 and stage>0:
+                    labels_ = torch.cat(gt_labels)
+                    for id in self.agnostic_resize_classes2:
+                        pseudo_boxes[labels_ == id, 2:4] *= 2
                 iou1 = box_iou_rotated(pseudo_boxes, torch.cat(gt_bboxes), aligned=True)
                 gt_xywh = torch.cat(gt_bboxes)[:,0:4]
                 if pseudo_boxes[:half_num,:].size(0)==torch.cat(gt_bboxes[:half_num_gt]).size(0):
@@ -1060,10 +1071,6 @@ class PointOBBHead(StandardRoIHead):
                     labels_ = torch.cat(gt_labels)
                     for id in self.agnostic_resize_classes:
                         pseudo_boxes[labels_ == id, 2:4] *= 0.65
-                if self.agnostic_resize_classes2 and stage>0:
-                    labels_ = torch.cat(gt_labels)
-                    for id in self.agnostic_resize_classes2:
-                        pseudo_boxes[labels_ == id, 2:4] *= 2
                 iou1 = box_iou_rotated(pseudo_boxes, torch.cat(gt_bboxes), aligned=True)
             else:
                 # print('----evalutaion no add angle!-----')
@@ -1086,7 +1093,6 @@ class PointOBBHead(StandardRoIHead):
         if self.test_mean_iou and stage == 1:
             self.sum_iou += iou1.sum()
             self.sum_num += len(iou1)
-            mean_iou = self.sum_iou / self.sum_num
             print('\r', self.sum_iou / self.sum_num, end='', flush=True)
 
         pseudo_boxes = torch.split(pseudo_boxes, batch_gt)

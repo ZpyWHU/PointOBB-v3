@@ -138,7 +138,7 @@ def main(json_name, txt_root):
     for image_info in data["images"]:
         file_name = image_info["file_name"]
         image_id = image_info["id"]
-        name = file_name.replace(".png", ".txt")  # DIOR jpg!!!
+        name = file_name.replace(".jpg", ".txt")  # DIOR
 
         with open(os.path.join(txt_root, name), 'w') as txt_file:
             for annotation in data["annotations"]:

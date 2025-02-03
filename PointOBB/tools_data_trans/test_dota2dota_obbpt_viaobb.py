@@ -6,11 +6,11 @@ from PIL import Image
 import math
 
 
-base_root = '/datasets/mmrotate_data/RSAR/test/'
+base_root = '/data/split_ss_dota/trainval/'
 imageparent = os.path.join(base_root, 'images')
 obb_anno_root = os.path.join(base_root, 'annfiles')
 
-labelTxt_out_path = '/RSAR/test/labelTxt_obb_pt_train_viaobb_v1.0'
+labelTxt_out_path = '/data/split_ss_dota/trainval/labelTxt_obb_pt_trainval_viaobb_v1.0'
 label_name_list = os.listdir(obb_anno_root)
 
 if not os.path.exists(labelTxt_out_path):
@@ -41,11 +41,7 @@ for label_name in label_name_list:
                 x4 = float(splitline[6])
                 y4 = float(splitline[7])
                 class_name = splitline[8]
-                difficult = splitline[9]
-                # class_name = " ".join(splitline[8:-1]) # for fair
-                # difficult = splitline[-1]   # for fair
-                # if "other" in class_name:   # for fair
-                #     continue
+                difficult = splitline[-1]
 
                 x_min = np.min((x1,x2,x3,x4))
                 y_min = np.min((y1,y2,y3,y4))

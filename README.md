@@ -20,48 +20,48 @@ DIOR-R
 
 |         Backbone         |  mAP  | Angle |  Config | Detector |                                                                                                                                                                              Download                                                                                                                                                                              |
 | :----------------------: | :---: | :---: | :---:  | :------: |  :------------------------------------------------------------------------------------------------------------: |
-| ResNet50 (1024,1024,200) | 41.82 | le90  | [pointobbv3-dior](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_dior_two_stage.py)|    Oriented RCNN  |  [model](https://drive.google.com/file/d/1sgbzmBpIiQKhsPN0M20vVw45wbF1v-vF/view?usp=drive_link) |
+| ResNet50 (1024,1024,200) | 37.60 | le90  | [pointobbv3-dior](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_dior_e2e.py)|    PointOBBv3_e2e  |  [model](https://drive.google.com/file/d/10sKamNRt1MA_HftDWj7PPKiuQUOG_Mqx/view?usp=drive_link) |
 
 
 DOTA-v1.0
 
 |         Backbone         |  mAP  | Angle |  Config | Detector |                                                                                                                                                                              Download                                                                                                                                                                              |
 | :----------------------: | :---: | :---: | :-----: | :------: |  :------------------------------------------------------------------------------------------------------------: |
-| ResNet50 (1024,1024,200) | 50.44 | le90  | [pointobbv3-dota](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_dota_two_stage.py)|    Oriented RCNN |  [model](https://drive.google.com/file/d/1QUfavBDgRXEZAuu3F1rUjIz2FlWcHKlp/view?usp=drive_link) |
+| ResNet50 (1024,1024,200) | 41.29 | le90  | [pointobbv3-dota](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_dota_e2e.py)|    PointOBBv3_e2e |  [model](https://drive.google.com/file/d/1cWzMJtZqn3iWXHtO5_vbh2-xdFahOopc/view?usp=drive_link) |
 
 
 DOTA-v1.5
 
 |         Backbone         |  mAP  | Angle |  Config | Detector |                                                                                                                                                                              Download                                                                                                                                                                              |
 | :----------------------: | :---: | :---: | :-----: | :------: |  :------------------------------------------------------------------------------------------------------------: |
-| ResNet50 (1024,1024,200) | 38.08 | le90  | [pointobbv3-dota15](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_dota15_two_stage.py)|    Oriented RCNN |  [model](https://drive.google.com/file/d/1HId_njTH_4Y_NRlTUqWAWwOC4wVZSv5E/view?usp=drive_link) |
+| ResNet50 (1024,1024,200) | 31.25 | le90  | [pointobbv3-dota15](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_dota15_e2e.py)|    PointOBBv3_e2e |  [model](https://drive.google.com/file/d/1qfbOw-yhqec4G4ol7eZKrtMtI7StG-wS/view?usp=drive_link) |
 
 
 DOTA-v2.0
 
 |         Backbone         |  mAP  | Angle |  Config | Detector |                                                                                                                                                                              Download                                                                                                                                                                              |
 | :----------------------: | :---: | :---: | :-----: | :------: |  :------------------------------------------------------------------------------------------------------------: |
-| ResNet50 (1024,1024,200) | 24.86 | le90  | [pointobbv3-dota20](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_dota20_two_stage.py)|    Oriented RCNN |  [model]() |
+| ResNet50 (1024,1024,200) | 22.82 | le90  | [pointobbv3-dota20](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_dota20_e2e.py)|    PointOBBv3_e2e |  [model](https://drive.google.com/file/d/1GHh420V8ngZ_0wDqPpsNPR1xpJvdzsQb/view?usp=drive_link) |
 
 FAIR1M
 
 |         Backbone         |  mAP  | Angle |  Config | Detector |                                                                                                                                                                              Download                                                                                                                                                                              |
 | :----------------------: | :---: | :---: | :-----: | :------: |  :------------------------------------------------------------------------------------------------------------: |
-| ResNet50 (1024,1024,200) | 20.19 | le90  | [pointobbv3-fair](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_fair_two_stage.py)|    Oriented RCNN |  [model](https://drive.google.com/file/d/1SQtk5Pyk2mMI8GdPajZ9pmkpODdbY5gf/view?usp=drive_link) |
+| ResNet50 (1024,1024,200) | 11.42 | le90  | [pointobbv3-fair](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_fair_e2e.py)|    PointOBBv3_e2e |  [model](https://drive.google.com/file/d/1mS_KMqeQ0pCjRoujE_SuT5zBOshIlfbE/view?usp=drive_link) |
 
 
 STAR
 
 |         Backbone         |  mAP  | Angle |  Config | Detector |                                                                                                                                                                              Download                                                                                                                                                                              |
 | :----------------------: | :---: | :---: | :-----: | :------: |  :------------------------------------------------------------------------------------------------------------: |
-| ResNet50 (1024,1024,200) | 16.73 | le90  | [pointobbv3-star](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_star_two_stage.py)|    Oriented RCNN |  [model](https://drive.google.com/file/d/1w87pIwM7QUbAAjT2W5T20hHNNQBf_3js/view?usp=drive_link) |
+| ResNet50 (1024,1024,200) | 11.31 | le90  | [pointobbv3-star](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_star_e2e.py)|    PointOBBv3_e2e |  [model](https://drive.google.com/file/d/1Rex8bFRoTZzWgyktPQssZuTwOrktGP8k/view?usp=drive_link) |
 
 
 RSAR
 
 |         Backbone         |  mAP  | Angle |  Config | Detector |                                                                                                                                                                              Download                                                                                                                                                                              |
 | :----------------------: | :---: | :---: | :-----: | :------: |  :------------------------------------------------------------------------------------------------------------: |
-| ResNet50 (1024,1024,200) | 22.84 | le90  | [pointobbv3-rsar](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_rsar_two_stage.py)|    Oriented RCNN |  [model](https://drive.google.com/file/d/1aIR7VmpGKncKMXQyDbr5UcMKaGPAqH9z/view?usp=drive_link) |
+| ResNet50 (1024,1024,200) | 15.84 | le90  | [pointobbv3-rsar](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_rsar_e2e.py)|    PointOBBv3_e2e |  [model](https://drive.google.com/file/d/1WvAXHWoTRlfHebxhOBAvg-p48y_c2G5n/view?usp=drive_link) |
 
 ### Citation
 If you find this work helpful, please consider to cite:

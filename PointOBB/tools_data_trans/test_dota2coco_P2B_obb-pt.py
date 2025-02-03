@@ -17,25 +17,6 @@ word_name_dior = ['airplane', 'airport', 'baseballfield', 'basketballcourt', 'br
          'stadium', 'storagetank', 'tenniscourt', 'trainstation', 'vehicle',
          'windmill']
 
-wordname_star = ['ship','boat','crane','goods_yard','tank','storehouse','breakwater','dock',
-        'airplane','boarding_bridge','runway','taxiway','terminal','apron','gas_station',
-        'truck','car','truck_parking','car_parking','bridge','cooling_tower','chimney',
-        'vapor','smoke','genset','coal_yard','lattice_tower', 'substation', 'wind_mill',
-        'cement_concrete_pavement', 'toll_gate', 'flood_dam', 'gravity_dam', 'ship_lock',
-        'ground_track_field','basketball_court','engineering_vehicle', 'foundation_pit', 
-        'intersection', 'soccer_ball_field','tennis_court','tower_crane','unfinished_building',
-        'arch_dam','roundabout','baseball_diamond','stadium','containment_vessel']
-
-wordname_fair = ['Boeing737', 'Boeing747', 'Boeing777', 'Boeing787', 'C919', 'A220',
-                'A321', 'A330', 'A350', 'ARJ21', 'Passenger Ship', 'Motorboat',
-                'Fishing Boat', 'Tugboat', 'Engineering Ship', 'Liquid Cargo Ship',
-                'Dry Cargo Ship', 'Warship', 'Small Car', 'Bus', 'Cargo Truck',
-                'Dump Truck', 'Van', 'Trailer', 'Tractor', 'Excavator',
-                'Truck Tractor', 'Basketball Court', 'Tennis Court', 'Football Field',
-                'Baseball Field', 'Intersection', 'Roundabout', 'Bridge']
-
-wordname_rsar = ['ship', 'aircraft', 'car', 'tank', 'bridge', 'harbor']
-
 def DOTA2COCOTrain(srcpath, destfile, cls_names, difficult='2'):
 
     # DIOR
@@ -43,7 +24,7 @@ def DOTA2COCOTrain(srcpath, destfile, cls_names, difficult='2'):
     # labelparent = os.path.join(srcpath, 'labelTxt_obb_pt_trainval')
     # # DOTA
     imageparent = os.path.join(srcpath, 'images')
-    labelparent = os.path.join(srcpath, 'labelTxt_obb_pt_train_viaobb_v1.0')
+    labelparent = os.path.join(srcpath, 'labelTxt_obb_pt_trainval_viaobb_v1.0')
 
     data_dict = {}
     data_dict['images'] = []
@@ -101,10 +82,8 @@ def DOTA2COCOTrain(srcpath, destfile, cls_names, difficult='2'):
                     point_y = float(splitline[9])
 
                     class_name = splitline[10]
-                    difficulty = splitline[11]
-                    # class_name = " ".join(splitline[10:-1]) # for fair
-                    # difficulty = splitline[-1]  # for fair
                     # class_name = class_name.lower() # DIOR
+                    difficulty = splitline[11]
                     assert class_name in cls_names
 
                     single_obj = {}
@@ -122,7 +101,7 @@ def DOTA2COCOTrain(srcpath, destfile, cls_names, difficult='2'):
                     single_obj['area'] = area
 
                     # pseudo hbox (as point label)
-                    width_ =16.0
+                    width_ = 16.0
                     height_ = 16.0
                     # CPR/P2B 
                     single_obj['point'] = point_x, point_y
@@ -171,7 +150,7 @@ def DOTA2COCOTest(srcpath, destfile, cls_names):
         json.dump(data_dict, f_out)
 
 if __name__ == '__main__':
-    DOTA2COCOTrain(r'/datasets/mmrotate_data/RSAR/test/',
-                   r'/datasets/mmrotate_data/RSAR/test/test_rbox_pt_P2Bfmt.json',
-                   wordname_rsar)
+    DOTA2COCOTrain(r'DOTAv10/data/split_ss_dota_1024_200/trainval/',
+                   r'DOTAv10/data/split_ss_dota_1024_200/trainval/trainval_1024_P2Bfmt_dotav10_rbox.json',
+                   wordname_15)
 

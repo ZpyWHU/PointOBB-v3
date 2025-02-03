@@ -18,6 +18,7 @@ from .utils import reduce_loss, weight_reduce_loss, weighted_loss
 from .varifocal_loss import VarifocalLoss
 from .multi_instance_learning_loss import MILLoss
 from .edge_loss import EdgeLoss
+from .rotated_iou_loss import RotatedIoULoss
 
 __all__ = [
     'accuracy', 'Accuracy', 'cross_entropy', 'binary_cross_entropy',
@@ -29,5 +30,5 @@ __all__ = [
     'l1_loss', 'isr_p', 'carl_loss', 'AssociativeEmbeddingLoss',
     'GaussianFocalLoss', 'QualityFocalLoss', 'DistributionFocalLoss',
     'VarifocalLoss', 'KnowledgeDistillationKLDivLoss', 'SeesawLoss',
-    'MILLoss', 'EdgeLoss'
+    'MILLoss', 'EdgeLoss', 'RotatedIoULoss'
 ]

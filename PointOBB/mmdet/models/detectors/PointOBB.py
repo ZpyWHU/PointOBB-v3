@@ -22,6 +22,19 @@ from .utils import resize_proposal, resize_single_proposal, flip_tensor, hboxlis
                    ,merge_batch_list, split_batch_list, box_iou_rotated, obb2poly_np
 import cv2
 import os
+from mmdet.core.bbox.transforms import rbbox2result
+
+from third_parties.ted.ted import TED
+
+custom_colors = [
+(255, 0, 0), # Blue
+(0, 255, 0), # Green
+(0, 255, 255), # Yellow
+(0, 128, 255), # Light Green
+(255, 0, 128), # Light Blue
+(128, 0, 0), # Dark Blue
+(0, 128, 0), # Dark Green
+]
 
 
 def resize_image(inputs, resize_ratio=0.5):
@@ -31,6 +44,25 @@ def resize_image(inputs, resize_ratio=0.5):
     
     return down_inputs
 
+def scale_bbox(bbox_results, class_index):
+    for image_bboxes in bbox_results:
+        class_bboxes = image_bboxes[class_index]
+        if class_bboxes.shape[0] > 0:
+            class_bboxes[:, 2] *= 0.65
+            class_bboxes[:, 3] *= 0.65
+            image_bboxes[class_index] = class_bboxes
+    return bbox_results
+
+def scale_bbox2(bbox_results, class_index):
+    for image_bboxes in bbox_results:
+        class_bboxes = image_bboxes[class_index]
+        if class_bboxes.shape[0] > 0:
+            class_bboxes[:, 2] *= 1.2
+            class_bboxes[:, 3] *= 1.2
+            image_bboxes[class_index] = class_bboxes
+    return bbox_results
+
+# my：P2B中PBR的正样本采样过程  输入：上一阶段生成的伪框  配置  图像元数据  阶段  输出：对伪框经过增强（调整尺寸和抖动）后的样本框以及有效位
 def fine_rotate_proposals_from_cfg(pseudo_boxes, fine_proposal_cfg, img_meta, stage):
     gen_mode = fine_proposal_cfg['gen_proposal_mode']
     # cut_mode = fine_proposal_cfg['cut_mode']
@@ -95,6 +127,7 @@ def fine_rotate_proposals_from_cfg(pseudo_boxes, fine_proposal_cfg, img_meta, st
 
     return proposal_list, proposals_valid_list
 
+# my：P2B中PBR的负样本采样过程   输入：点标签  配置  正样本  图像数据   输出：负样本框  负样本框权重
 def gen_rotate_negative_proposals(gt_points, proposal_cfg, aug_generate_proposals, img_meta):
     num_neg_gen = proposal_cfg['gen_num_neg']
     if num_neg_gen == 0:
@@ -167,11 +200,15 @@ class PointOBB(TwoStageDetector):
                  test_cfg,
                  construct_view = True,
                  construct_resize = False,
+                 weight_mode = 'dynamic_weight',
+                 scale_classes = None,
+                 scale_classes2 = None,
                  loss_diff_view=dict(type='SmoothL1Loss', beta=1.0, loss_weight=1.0),
                  crop_size = (1024, 1024),
                  padding = 'reflection',
                  view_range: Tuple[float, float] = (0.25, 0.75),
                  bbox_head=None,
+                 bbox_pred_head=None,
                  neck=None,
                  pretrained=None,
                  init_cfg=None):
@@ -185,6 +222,7 @@ class PointOBB(TwoStageDetector):
             init_cfg=init_cfg)
         self.num_stages = roi_head.num_stages
         self.stage = 0
+        
         print(f'========={self.stage}===========')
         if bbox_head is not None:
             self.with_bbox_head = True
@@ -195,12 +233,19 @@ class PointOBB(TwoStageDetector):
         self.loss_diff_view = build_loss(loss_diff_view)
         self.construct_view = construct_view
         self.construct_resize = construct_resize
+        self.weight_mode  = weight_mode
+        self.scale_classes = scale_classes
+        self.scale_classes2 = scale_classes2
+
+        if bbox_pred_head is not None:
+            self.bbox_pred_head = build_head(bbox_pred_head)
 
         if train_cfg is not None:
             self.iter_count = train_cfg.get("iter_count")
             self.burn_in_steps1 = train_cfg.get("burn_in_steps1")
             self.burn_in_steps2 = train_cfg.get("burn_in_steps2")
-        
+
+    # my:  对图片做旋转和裁剪  输入：images  旋转角度  裁剪大小  实例  padding方式  输出：crop后的images和实例
     def rotate_crop(
             self,
             batch_inputs: Tensor,
@@ -268,6 +313,7 @@ class PointOBB(TwoStageDetector):
 
             return batch_inputs, batch_gt_instances
 
+    # my:  构建rot/flip视图   输出：两个视图ori/rot的拼接
     def construct_Rview(self, img, generate_proposals_0, gt_bboxes, img_metas, 
                         gt_labels, gt_true_bboxes, gt_bboxes_ignore, proposals_valid_list_0):
         
@@ -381,6 +427,7 @@ class PointOBB(TwoStageDetector):
         return (img_inputs_all, batch_gt_bboxes_all, batch_proposals_all, img_metas_all,
                 gt_labels_all, gt_true_bboxes_all, gt_bboxes_ignore_all, proposals_valid_list_all)
     
+    # my： 计算两个视图间的得分相似性（SSC） 
     def Cross_View_Diff_Sim(self, results_v1, results_v2, gt_labels, proposals_valid, double_view, mode = 'scales', stage = 0):
         gt_label = torch.cat(gt_labels)
         base_proposal_cfg = self.train_cfg.get('base_proposal',self.test_cfg.rpn)
@@ -455,85 +502,6 @@ class PointOBB(TwoStageDetector):
         
         return cls_similarity, ins_similarity, score_similarity
 
-
-    # def Cross_View_Sim(self, results_v1v2, gt_labels, proposals_valid_list, mode = 'scales', stage = 0):
-    #     gt_label = torch.cat(gt_labels)
-    #     half_num = len(gt_label)//2
-    #     proposals_valid_all = torch.cat(proposals_valid_list)
-    #     half_num_vaild = len(proposals_valid_all)//2
-    #     # with torch.no_grad():
-    #     base_proposal_cfg = self.train_cfg.get('base_proposal',self.test_cfg.rpn)
-    #     fine_proposal_cfg = self.train_cfg.get('fine_proposal',self.test_cfg.rpn)
-    #     if mode == 'scales':
-    #         num_base_scales = len(base_proposal_cfg['base_scales'])
-    #     elif mode == 'ratios':
-    #         num_base_scales = len(base_proposal_cfg['base_ratios'])
-    #     elif mode == 'gts':
-    #         num_base_scales = len(base_proposal_cfg['base_scales']) * len(base_proposal_cfg['base_ratios'])
-
-    #     if stage >=1:
-    #         if isinstance(fine_proposal_cfg['base_ratios'], tuple):
-    #             num_base_scales = len(fine_proposal_cfg['base_ratios'][stage - 1])
-    #             # shake_ratio = fine_proposal_cfg['shake_ratio'][stage - 1]
-    #         else:
-    #             num_base_scales = len(fine_proposal_cfg['base_ratios'])
-    #             # shake_ratio = fine_proposal_cfg['shake_ratio']
-
-    #     cls_score_v1 = results_v1v2['cls_score'][:half_num,...]  # [num_gt, num_pros, num_cls+1])
-    #     ins_score_v1 = results_v1v2['ins_score'][:half_num,...]
-    #     proposal_vaild_v1 = proposals_valid_all[:half_num_vaild,...].reshape(half_num, -1)
-    #     proposal_vaild_v2 = proposals_valid_all[half_num_vaild:,...].reshape(half_num, -1)
-    #     proposal_vaild = proposal_vaild_v1 * proposal_vaild_v2
-
-    #     if stage < 1:
-    #         cls_score_v1_prob = cls_score_v1.softmax(dim=-1)
-    #     elif stage >= 1:
-    #         cls_score_v1_prob = cls_score_v1.sigmoid() 
-    #     cls_score_v1_prob = cls_score_v1_prob * proposal_vaild[...,None]
-    #     ins_score_v1_prob = ins_score_v1.softmax(dim=1) * proposal_vaild[...,None]  
-    #     ins_score_v1_prob = F.normalize(ins_score_v1_prob, dim=1, p=1)
-    #     prob_v1 = (cls_score_v1_prob * ins_score_v1_prob).sum(dim=1) 
-
-    #     cls_score_v2 = results_v1v2['cls_score'][half_num:,...]
-    #     ins_score_v2 = results_v1v2['ins_score'][half_num:,...]
-        
-    #     if stage < 1:
-    #         cls_score_v2_prob = cls_score_v2.softmax(dim=-1)
-    #     elif stage >= 1:
-    #         cls_score_v2_prob = cls_score_v2.sigmoid()
-    #     cls_score_v2_prob = cls_score_v2_prob * proposal_vaild[...,None]
-    #     ins_score_v2_prob = ins_score_v2.softmax(dim=1)  * proposal_vaild[...,None]
-    #     ins_score_v2_prob = F.normalize(ins_score_v2_prob, dim=1, p=1)
-    #     prob_v2 = (cls_score_v2_prob * ins_score_v2_prob).sum(dim=1)
-
-    #     if stage >= 1:
-    #         cls_score_v1_prob_list = []
-    #         cls_score_v2_prob_list = []
-    #         ins_score_v1_prob_list = []
-    #         ins_score_v2_prob_list = []
-    #         for i in range(half_num):
-    #             cls_score_v1_prob_list.append(cls_score_v1_prob[i, ..., gt_label[i]].unsqueeze(0))
-    #             cls_score_v2_prob_list.append(cls_score_v2_prob[i, ..., gt_label[i]].unsqueeze(0))
-    #             ins_score_v1_prob_list.append(ins_score_v1_prob[i, ..., gt_label[i]].unsqueeze(0))
-    #             ins_score_v2_prob_list.append(ins_score_v2_prob[i, ..., gt_label[i]].unsqueeze(0))
-    #         cls_score_v1_prob = torch.cat(cls_score_v1_prob_list, dim=0)
-    #         cls_score_v2_prob = torch.cat(cls_score_v2_prob_list, dim=0)
-    #         ins_score_v1_prob = torch.cat(ins_score_v1_prob_list, dim=0)
-    #         ins_score_v2_prob = torch.cat(ins_score_v2_prob_list, dim=0)
-        
-    #     cls_score_v1_prob = cls_score_v1_prob.reshape(cls_score_v1.size(0), num_base_scales, -1)
-    #     # cls_score_v1_prob = cls_score_v1_prob * proposal_vaild_v1
-    #     ins_score_v1_prob = ins_score_v1_prob.reshape(ins_score_v1.size(0), num_base_scales, -1)
-    #     cls_score_v2_prob = cls_score_v2_prob.reshape(cls_score_v2.size(0), num_base_scales, -1)
-    #     ins_score_v2_prob = ins_score_v2_prob.reshape(ins_score_v2.size(0), num_base_scales, -1)
-
-    #     cls_similarity = 1 - F.cosine_similarity(cls_score_v1_prob, cls_score_v2_prob, dim=-1, eps=1e-6)
-    #     ins_similarity = 1 - F.cosine_similarity(ins_score_v1_prob, ins_score_v2_prob, dim=-1, eps=1e-6)
-    #     score_similarity = 1 - F.cosine_similarity(prob_v1, prob_v2, dim=1, eps=1e-6)
-        
-    #     return cls_similarity, ins_similarity, score_similarity
-    
-
     def forward_train(self,
                       img,
                       img_metas,
@@ -544,13 +512,14 @@ class PointOBB(TwoStageDetector):
                       gt_masks=None,
                       proposals=None,
                       **kwargs):
-        
+        self.e2e = True
         # stage1进入策略
         if self.iter_count == self.burn_in_steps1:
             self.roi_head.use_angle_loss = True
             print(f'#####iter_count1 use_angle_loss:{self.iter_count}#####')
             if self.construct_resize:
                 self.construct_resize = False
+        # 用于处理断点重训时，roi_head.use_angle_loss未被继承的问题
         if self.iter_count > self.burn_in_steps1:
             self.roi_head.use_angle_loss = True
             if self.construct_resize:
@@ -560,11 +529,11 @@ class PointOBB(TwoStageDetector):
             if self.roi_head.use_angle_loss:
                 self.roi_head.add_angle_pred_begin = True
                 print(f'#####iter_count2 add_angle_pred_begin:{self.iter_count}#####')
+        # 用于处理断点重训时，roi_head.add_angle_pred_begin未被继承的问题
         if self.iter_count > self.burn_in_steps2:
             if self.roi_head.use_angle_loss:
                 self.roi_head.add_angle_pred_begin = True
-                
-            
+
         base_proposal_cfg = self.train_cfg.get('base_proposal',
                                                self.test_cfg.rpn)
         fine_proposal_cfg = self.train_cfg.get('fine_proposal',
@@ -572,9 +541,12 @@ class PointOBB(TwoStageDetector):
         losses = dict()
         gt_points = [bbox_xyxy_to_cxcywh(b)[:, :2] for b in gt_bboxes]
 
+        # my: CBP
         if self.stage == 0:
+            # my: 生成初始框
             generate_proposals_0, proposals_valid_list_0 = gen_proposals_from_cfg(gt_points, base_proposal_cfg,
                                                                                   img_meta = img_metas)
+            
             # Construst Rotate/Filp View
             (img_inputs_all, batch_gt_bboxes_all, batch_proposals_all, img_metas_all,
             gt_labels_all, gt_true_bboxes_all, gt_bboxes_ignore_all, 
@@ -643,6 +615,7 @@ class PointOBB(TwoStageDetector):
                     gt_bboxes[i] = gt_bboxes[i][select_inds]
 
             dynamic_weight_init = torch.cat(gt_labels).new_ones(len(torch.cat(gt_labels)))
+            # my：送进roi_head里计算损失   返回：MIL_loss， ins&cls得分， 最后筛选融合的伪框， 动态权重
             roi_losses_0, bbox_results, pseudo_boxes, dynamic_weight = self.roi_head.forward_train(self.stage, feat, img_metas_all,
                                                                                                     gt_points_all,
                                                                                                     generate_proposals_0,
@@ -689,11 +662,13 @@ class PointOBB(TwoStageDetector):
                                                                        mode = 'scales', stage=0)
                                                                     #  mode = 'ratios', stage=0)
                                                                     #  mode = 'gts', stage=0)
+                                                                                        
                                                                 
                 loss_scale1 = 1.0 * self.loss_diff_view(cls_sim, torch.zeros_like(cls_sim))  
                 loss_scale2 = 2.0 * self.loss_diff_view(ins_sim, torch.zeros_like(ins_sim))
                 losses[f'stage{self.stage}_loss_SSC_cls'] = loss_scale1
                 losses[f'stage{self.stage}_loss_SSC_ins'] = loss_scale2
+
 
                 for key, value in roi_losses_dview.items():
                     losses[f'stage{self.stage}_dview_{key}'] = value
@@ -732,11 +707,42 @@ class PointOBB(TwoStageDetector):
                                                                                     gt_bboxes_ignore, gt_masks,
                                                                                     **kwargs)
             
-            
             for key, value in roi_losses_i.items():
                 losses[f'stage{self.stage}_{key}'] = value
             self.stage +=1
             del roi_losses_i
+        
+        if self.e2e:
+            # ins_score weight
+            ins_score_weight = []
+            for x in range(half_num):
+                ins_score = bbox_results_i["filtered_scores"][x]["ins_score"].sum(-1).detach()
+                ins_score_weight.append(ins_score)
+            ins_score_weight = torch.cat(ins_score_weight)
+                        
+            if self.weight_mode == 'ins_score':
+                weight_to_use = ins_score_weight
+            if self.weight_mode == 'dynamic_weight':
+                weight_to_use = dynamic_weight
+            split_weights = []
+            start_idx = 0
+            for boxes in pseudo_boxes[:half_num]:
+                num_gts = boxes.shape[0]  
+                end_idx = start_idx + num_gts 
+                split_weights.append(weight_to_use[start_idx:end_idx])
+                start_idx = end_idx
+                
+            
+            feat_half = [f[:half_num] for f in feat]
+            cls_scores, bbox_preds, angle_preds, centernesses = self.bbox_pred_head.forward(feat_half)
+        
+            loss_e2e = self.bbox_pred_head.loss(cls_scores, bbox_preds, angle_preds, 
+                                                centernesses, pseudo_boxes[:half_num], 
+                                                gt_labels[:half_num], split_weights, img_metas[:half_num])
+            losses['loss_e2e_cls'] = loss_e2e['loss_cls']
+            losses['loss_e2e_bbox'] = loss_e2e['loss_bbox']
+            losses['loss_e2e_centerness'] = loss_e2e['loss_centerness'] 
+          
         
         if self.stage > 1:
             for j in range(len(gt_points)):
@@ -754,30 +760,44 @@ class PointOBB(TwoStageDetector):
         self.iter_count += 1
         return losses
     
-    def simple_test(self, img, img_metas, gt_bboxes, gt_anns_id, gt_true_bboxes, gt_labels,
-                    gt_bboxes_ignore=None, proposals=None, rescale=False):
-        """Test without augmentation."""
-        base_proposal_cfg = self.train_cfg.get('base_proposal', self.test_cfg.rpn)
-        fine_proposal_cfg = self.train_cfg.get('fine_proposal', self.test_cfg.rpn)
-        assert self.with_bbox, 'Bbox head must be implemented.'
-        x = self.extract_feat(img)
-        for stage in range(self.num_stages):
-            gt_points = [bbox_xyxy_to_cxcywh(b)[:, :2] for b in gt_bboxes]
-            if stage == 0:
-                generate_proposals, proposals_valid_list = gen_proposals_from_cfg(gt_points, base_proposal_cfg,
-                                                                                  img_meta=img_metas)
-                generate_rot_proposals = hboxlist2cxcywha(generate_proposals)
-            else:
-                generate_rot_proposals, proposals_valid_list = fine_rotate_proposals_from_cfg(pseudo_boxes, fine_proposal_cfg,
-                                                                                   img_meta=img_metas, stage=stage)
+    # e2e test
+    def simple_test(self, img, img_metas, rescale=False):
+        """Test function without test time augmentation.
 
-            test_result, pseudo_boxes = self.roi_head.simple_test(stage, x, generate_rot_proposals, 
-                                                                  proposals_valid_list,
-                                                                  gt_points,
-                                                                  gt_true_bboxes, gt_labels,
-                                                                  gt_anns_id,
-                                                                  img_metas,
-                                                                  rescale=rescale)
-        return test_result
+        Args:
+            imgs (list[torch.Tensor]): List of multiple images
+            img_metas (list[dict]): List of image information.
+            rescale (bool, optional): Whether to rescale the results.
+                Defaults to False.
+
+        Returns:
+            list[list[np.ndarray]]: BBox results of each image and classes. \
+                The outer list corresponds to each image. The inner list \
+                corresponds to each class.
+        """
+        x = self.extract_feat(img)
+        outs = self.bbox_pred_head.forward(x)
+        bbox_list = self.bbox_pred_head.get_bboxes(
+            *outs, img_metas, rescale=rescale, cfg=self.test_cfg)
+
+        bbox_results = [
+            rbbox2result(det_bboxes, det_labels, self.bbox_pred_head.num_classes)
+            for det_bboxes, det_labels in bbox_list
+        ]
+        
+        if self.scale_classes:
+            for id in self.scale_classes:
+                bbox_results = scale_bbox(bbox_results, id)
+        if self.scale_classes2:
+            for id in self.scale_classes2:
+                bbox_results = scale_bbox2(bbox_results, id)
+
+        return bbox_results
 
         
+       
+    
+
+
+
+

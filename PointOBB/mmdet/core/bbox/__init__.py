@@ -2,7 +2,7 @@ from .assigners import (AssignResult, BaseAssigner, CenterRegionAssigner,
                         MaxIoUAssigner, RegionAssigner)
 from .builder import build_assigner, build_bbox_coder, build_sampler
 from .coder import (BaseBBoxCoder, DeltaXYWHBBoxCoder, PseudoBBoxCoder,
-                    TBLRBBoxCoder)
+                    TBLRBBoxCoder, DistanceAnglePointCoder, DistancePointBBoxCoder)
 from .iou_calculators import BboxOverlaps2D, bbox_overlaps
 from .samplers import (BaseSampler, CombinedSampler,
                        InstanceBalancedPosSampler, IoUBalancedNegSampler,
@@ -11,7 +11,7 @@ from .samplers import (BaseSampler, CombinedSampler,
 from .transforms import (bbox2distance, bbox2result, bbox2roi,
                          bbox_cxcywh_to_xyxy, bbox_flip, bbox_mapping,
                          bbox_mapping_back, bbox_rescale, bbox_xyxy_to_cxcywh,
-                         distance2bbox, roi2bbox, rbbox2roi)
+                         distance2bbox, roi2bbox, rbbox2roi, norm_angle, obb2poly_np, poly2obb_np, rbbox2result)
 
 __all__ = [
     'bbox_overlaps', 'BboxOverlaps2D', 'BaseAssigner', 'MaxIoUAssigner',
@@ -19,9 +19,9 @@ __all__ = [
     'InstanceBalancedPosSampler', 'IoUBalancedNegSampler', 'CombinedSampler',
     'OHEMSampler', 'SamplingResult', 'ScoreHLRSampler', 'build_assigner',
     'build_sampler', 'bbox_flip', 'bbox_mapping', 'bbox_mapping_back',
-    'bbox2roi', 'roi2bbox', 'bbox2result', 'distance2bbox', 'bbox2distance',
-    'build_bbox_coder', 'BaseBBoxCoder', 'PseudoBBoxCoder',
+    'bbox2roi', 'roi2bbox', 'bbox2result', 'distance2bbox', 'bbox2distance', 'norm_angle',
+    'build_bbox_coder', 'BaseBBoxCoder', 'PseudoBBoxCoder', 'DistanceAnglePointCoder', 'DistancePointBBoxCoder',
     'DeltaXYWHBBoxCoder', 'TBLRBBoxCoder', 'CenterRegionAssigner',
     'bbox_rescale', 'bbox_cxcywh_to_xyxy', 'bbox_xyxy_to_cxcywh',
-    'RegionAssigner', 'rbbox2roi'
+    'RegionAssigner', 'rbbox2roi', 'poly2obb_np', 'obb2poly_np', 'rbbox2result'
 ]

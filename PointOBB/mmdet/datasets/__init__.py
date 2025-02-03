@@ -14,6 +14,15 @@ from .wider_face import WIDERFaceDataset
 from .xml_style import XMLDataset
 from .cocofmt import CocoFmtDataset  # add by hui
 from .cocofmt_obb import CocoFmtObbDataset
+from .dota_point import DOTAPointDataset
+from .dior_point import DIORPointDataset
+from .dota_point_test import DOTADataset
+from .dota15_point_test import DOTA15Dataset
+from .dota20_point_test import DOTA20Dataset
+from .star_point_test import STARDataset
+from .fair1m_point_test import FAIR1MDataset
+from .rsar_point import RSARPointDataset
+
 
 __all__ = [
     'CustomDataset', 'XMLDataset', 'CocoDataset', 'DeepFashionDataset',
@@ -23,5 +32,6 @@ __all__ = [
     'ClassBalancedDataset', 'WIDERFaceDataset', 'DATASETS', 'PIPELINES',
     'build_dataset', 'replace_ImageToTensor', 'get_loading_pipeline',
     'NumClassCheckHook', 'CocoFmtDataset'  # add by hui
-    , 'CocoFmtObbDataset', 'DefectVOC2012Dataset'
+    , 'CocoFmtObbDataset', 'DOTAPointDataset', 'DIORPointDataset', 'DOTADataset', 
+    'DOTA15Dataset', 'DOTA20Dataset', 'STARDataset', 'FAIR1MDataset', 'RSARPointDataset'
 ]

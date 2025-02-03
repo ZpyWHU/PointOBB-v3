@@ -5,7 +5,7 @@ from mmcv.cnn import (ConvModule, bias_init_with_prob, constant_init, is_norm,
 from mmcv.runner import force_fp32
 
 from mmdet.core import anchor_inside_flags, multi_apply, reduce_mean, unmap
-from ..builder import HEADS
+from ..builder import HEADS, MODELS, build_head, build_roi_extractor, build_loss
 from .anchor_head import AnchorHead
 
 INF = 1e8
@@ -58,10 +58,13 @@ class YOLOFHead(AnchorHead):
                  num_cls_convs=2,
                  num_reg_convs=4,
                  norm_cfg=dict(type='BN', requires_grad=True),
+                 loss_angle=dict(
+                     type='L1Loss', loss_weight=0.1),
                  **kwargs):
         self.num_cls_convs = num_cls_convs
         self.num_reg_convs = num_reg_convs
         self.norm_cfg = norm_cfg
+        self.loss_angle = build_loss(loss_angle)
         super(YOLOFHead, self).__init__(num_classes, in_channels, **kwargs)
 
     def _init_layers(self):
