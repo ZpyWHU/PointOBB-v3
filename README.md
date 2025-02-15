@@ -4,6 +4,7 @@
 
 ### Paper
 The paper is available at [PointOBB-v3](https://arxiv.org/abs/2501.13898). You are also welcome to check out the conference version [PointOBB](https://openaccess.thecvf.com/content/CVPR2024/html/Luo_PointOBB_Learning_Oriented_Object_Detection_via_Single_Point_Supervision_CVPR_2024_paper.html).
+**This branch contains the code for the two-stage version. For the end-to-end version, please refer to another branch.**
 
 
 ![Pipeline Image](PointOBB/docs/pipeline.jpg)
@@ -62,9 +63,6 @@ RSAR
 |         Backbone         |  mAP  | Angle |  Config | Detector |                                                                                                                                                                              Download                                                                                                                                                                              |
 | :----------------------: | :---: | :---: | :-----: | :------: |  :------------------------------------------------------------------------------------------------------------: |
 | ResNet50 (1024,1024,200) | 22.84 | le90  | [pointobbv3-rsar](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_rsar_two_stage.py)|    Oriented RCNN |  [model](https://drive.google.com/file/d/1bf4wzAApTUFm05sRXmXSyOWzrohW4wx-/view?usp=sharing) |
-
-
-# The code of end-to-end version is in the other branch!
 
 ### Citation
 If you find this work helpful, please consider to cite:
