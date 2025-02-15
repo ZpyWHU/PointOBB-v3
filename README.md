@@ -63,6 +63,9 @@ RSAR
 | :----------------------: | :---: | :---: | :-----: | :------: |  :------------------------------------------------------------------------------------------------------------: |
 | ResNet50 (1024,1024,200) | 22.84 | le90  | [pointobbv3-rsar](PointOBB/configs2/pointobb/pointobbv3_r50_fpn_2x_rsar_two_stage.py)|    Oriented RCNN |  [model](https://drive.google.com/file/d/1bf4wzAApTUFm05sRXmXSyOWzrohW4wx-/view?usp=sharing) |
 
+
+# The code of end-to-end version is in the other branch!
+
 ### Citation
 If you find this work helpful, please consider to cite:
 ```
